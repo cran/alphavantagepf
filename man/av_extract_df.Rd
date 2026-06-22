@@ -4,13 +4,16 @@
 \alias{av_extract_df}
 \alias{av_extract_fx}
 \alias{av_extract_analytics}
+\alias{av_extract_divs_or_splits}
 \title{Extract data from Alpha Vantage returned data}
 \usage{
-av_extract_df(indta, grepstring = "", melt = FALSE)
+av_extract_df(indta, grepstring = "", melt = FALSE, empty_dt_onerror = FALSE)
 
-av_extract_fx(indta)
+av_extract_fx(indta, outputform = "common", cols = "")
 
 av_extract_analytics(indta, separate_vars = FALSE)
+
+av_extract_divs_or_splits(indta)
 }
 \arguments{
 \item{indta}{A data.table as returned by av_get()}
@@ -18,6 +21,13 @@ av_extract_analytics(indta, separate_vars = FALSE)
 \item{grepstring}{select which variable (data item) to unnest in data.table returned from av_get_pf}
 
 \item{melt}{Return data in melted/normalized form}
+
+\item{empty_dt_onerror}{(default : FALSE): Return gracefully an empty data.table if requested item is not present.}
+
+\item{outputform}{(default : \code{common}, \code{av_extract_fx()} only):  Use common names from \code{REALTIME_BULK_QUOTES}}
+
+\item{cols}{(default : all columns:  \code{av_extract_fx()} only):  String or List of columns to return
+`}
 
 \item{separate_vars}{(default : FALSE)  separate out multiple levels of variable names into new keys}
 }
@@ -28,6 +38,7 @@ Extracted data.tables for nested data returned from \code{\link[=av_get_pf]{av_g
 \code{av_extract_df()} pulls out nested data.frames from mixed data returned by  \code{\link[=av_get_pf]{av_get_pf()}}
 \code{av_extract_fx()} returns a simplified FX quote in data.table formfrom \code{\link[=av_get_pf]{av_get_pf()}} calls.
 \code{av_extract_analytics()} returns melted data.table from calls to \code{av_get_pf("ANALYTICS_FIXED_WINDOW")} or \code{av_get_pf("ANALYTICS_SLIDING_WINDOW")}
+\code{av_extract_divs_or_splits()} returns melted data.table from calls to \code{av_get_pf("DIVIDENDS")} or \code{av_get_pf("SPLITS")}
 }
 \details{
 \code{\link[=av_get_pf]{av_get_pf()}} frequently returns a nested data.table, or a structure with nested data.frames.  These are utilities functions to extract, filter and summarize returned values.

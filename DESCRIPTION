@@ -1,27 +1,31 @@
 Package: alphavantagepf
-Title: Comprehensive R Wrapper for 'Alphavantage Financial Data' API
-Version: 0.3.2
+Title: Comprehensive R Wrapper and Shiny Interface for 'Alphavantage
+        Financial Data' API
+Version: 0.8.0
 Authors@R: c(
-    person("Derek", "Holmes", email = "derek@derekholmes.com", role = c("aut", "cre", "cph")),
-    person("Matt", "Dancho", email = "mdancho@business-science.io", role = c("ctb"))
+    person("Derek", "Holmes", email = "derek@derekholmes.com", role = c("aut", "cre", "cph"))
     )
-Description: Download 'Alphavantage financial data' <https://www.alphavantage.co/documentation/> to reduced 'data.table' objects. Includes support functions to extract and simplify complex data returned from API calls.
+Description: Download, manage, and visualize via Shiny App 'Alphavantage financial data' <https://www.alphavantage.co/documentation/>. Data is downloaded and organized into `data.table` objects using a single calling function with optional helper functions to extract and simplify more complex data.   A Shiny interface is also provided to download, manage, and graph asset prices and characteristics.
 License: GPL (>= 3)
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
-Imports: dplyr (>= 1.0.0), data.table, glue (>= 1.1.1), httr (>=
-        1.2.1), jsonlite (>= 1.5), purrr (>= 1.0), readr (>= 1.1.1),
-        stringr (>= 1.2.0), timeDate (>= 4000.0), lubridate (>= 1.0.0),
-        utils (>= 4.0.0), tidyr (>= 0.6.3)
-Suggests: testthat, knitr, rmarkdown
-RoxygenNote: 7.3.3
+Imports: dplyr (>= 1.0.0), tidyr (>= 0.6.3), data.table, glue (>=
+        1.1.1), httr (>= 1.2.1), jsonlite (>= 1.5), purrr (>= 1.0),
+        readr (>= 1.1.1), stringr (>= 1.2.0), timeDate (>= 4000.0),
+        lubridate (>= 1.0.0), utils (>= 4.0.0), fst (>= 0.9.8), shiny
+        (>= 1.0.0), shinyjs (>= 2.1.0), shinyFeedback (>= 0.4.0),
+        dygraphs (>= 1.1.0), gt (>= 1.3.0), gtExtras (>= 0.6.0), clipr
+        (>= 0.8.0), rlang (>= 1.2.0), TTR (>= 0.24.0), usethis,
+        FinanceGraphs (>= 0.8.0)
+Suggests: bslib, testthat, knitr, rmarkdown
+RoxygenNote: 8.0.0
 VignetteBuilder: knitr
-URL: https://github.com/derekholmes0/alphavantagepf
+URL: https://github.com/derekholmes0/alphavantagepf,
+        https://derekholmes0.github.io/alphavantagepf/
 BugReports: https://github.com/derekholmes0/alphavantagepf/issues
 NeedsCompilation: no
-Packaged: 2026-01-19 13:33:02 UTC; DFH
-Author: Derek Holmes [aut, cre, cph],
-  Matt Dancho [ctb]
+Packaged: 2026-06-21 15:01:30 UTC; DFH
+Author: Derek Holmes [aut, cre, cph]
 Maintainer: Derek Holmes <derek@derekholmes.com>
 Repository: CRAN
-Date/Publication: 2026-01-22 21:40:02 UTC
+Date/Publication: 2026-06-22 06:50:40 UTC

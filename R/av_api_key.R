@@ -26,10 +26,14 @@
 av_api_key <- function(api_key,entitlement=NULL) {
     if (!missing(api_key)) {
         options(av_api_key = api_key)
+        the_av$avapikey = api_key
+        av_set_defaults()
     }
   if (!is.null(entitlement)) {
     if( tolower(entitlement) %in% c("delayed","realtime")) {
         options(av_api_entitlement = entitlement)
+        the_av$avapientitlement = entitlement
+      av_set_defaults()
     }
   }
   invisible(c(getOption('av_api_key'),getOption('av_api_entitlement',default=NA_character_)))

@@ -1,8 +1,8 @@
 ---
-title: "usage-alphvantagepf"
+title: "usage-alphavantagepf"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{usage-alphvantagepf}
+  %\VignetteIndexEntry{usage-alphavantagepf}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -31,7 +31,7 @@ av_api_key("YOUR_API_KEY")
 print(av_api_key())
 ```
 
-## Finding Functions and their defaults""
+## Finding Functions and their defaults
 
 To find parameters and defaults provided by the `alphavantagepf` package, use `av_funhelp()`
 

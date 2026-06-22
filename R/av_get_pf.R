@@ -11,6 +11,7 @@
 #' @param dfonerror (default: TRUE) Return an empty data.table when any error occurs
 #' @param verbose (default: FALSE) Print debug information helpful for errors.  Also copies full url to clipboard.
 #' @param melted  (default: "default") String specifying when to melt, "default" is chosen by the package, "TRUE|always" always melt, "FALSE|never" never melts
+#' @param delay  (default: 0) Delay in seconds after API call, used to embed within large single-symbol calls.
 #' @param ... Additional parameters or overrides passed to the Alpha Vantage API.
 #' For a list of parameters, visit the [Alpha Vantage API documentation](https://www.alphavantage.co/documentation/).
 #'
@@ -47,41 +48,32 @@
 #' # ---- 1.0 SINGLE NAME EQUITY SUMMARY INFORMATION AND SEARCH ----
 #'
 #' av_get_pf("IBM","OVERVIEW") |> str()
-#'
 #' av_get_pf("EWZ","ETF_PROFILE")
 #' av_get_pf("EWZ","ETF_PROFILE") |> av_extract_df("holdings")
-#'
 #' av_get_pf("","SYMBOL_SEARCH",keywords="COMMERCE")
 #'
 #' # ---- 2.0 MARKET QUOTES  ----
 #'
 #' av_get_pf("IBM","GLOBAL_QUOTE")
-#'
 #' av_get_pf("USD/BRL","CURRENCY_EXCHANGE_RATE") |> av_extract_fx()
-#'
 #' av_get_pf(c("ORCL","IBM","EWZ","ARGT"),"REALTIME_BULK_QUOTES",melt=FALSE)
 #' # Note you need advanced permissioning for REALTIME_BULK_QUOTES
 #'
 #' # ---- 3.0 SINGLE NAME HISTORICAL DATA  ----
 #'
 #' av_get_pf("IBM","TIME_SERIES_DAILY")
-#'
 #' av_get_pf("IBM","TIME_SERIES_INTRADAY")
 #'
 #' # ---- 4.0 MARKET PRICING DATA  ----
 #'
 #' av_get_pf("","MARKET_STATUS")  |> av_extract_df()
-#'
 #' av_get_pf("","TOP_GAINERS_LOSERS") |> av_extract_df("top_losers")
-#'
 #' av_get_pf("","TREASURY_YIELD",maturity='7year')
 #'
-#'  # ---- 4.0 SINGLE NAME NON-PRICING DATA  ----
+#' # ---- 4.0 SINGLE NAME NON-PRICING DATA  ----
 #'
 #' av_get_pf("IBM","DIVIDENDS")
-#'
 #' av_get_pf("IBM","EARNINGS")  |> av_extract_df("quarter",melt=TRUE)
-#'
 #' av_get_pf("IBM","NEWS_SENTIMENT") |> av_extract_df("feed")
 #'
 #' av_get_pf("IBM","EARNINGS_CALL_TRANSCRIPT",quarter="2024Q3")  |> av_extract_df("transcript")
@@ -103,27 +95,41 @@
 #' }
 #'
 #' @export
-av_get_pf <- function(symbol, av_fun, symbolvarnm="symbol",dfonerror=TRUE,melted="default",verbose=FALSE, ...) {
+av_get_pf <- function(symbol, av_fun, symbolvarnm="symbol",dfonerror=TRUE,melted="default",delay=0,verbose=FALSE, ...) {
 
     if (missing(symbol)) symbol <- NULL
+    if (any(is.na(symbol))) {
+      message_if_red(TRUE,"av_get_pf: Symbol is NA, returning empty data.table")
+      return(data.table())
+    }
     # Checks
     if (is.null(av_api_key())) {
         stop("Set API key using av_api_key(). If you do not have an API key, please claim your free API key on (https://www.alphavantage.co/support/#api-key). It should take less than 20 seconds, and is free permanently.",
              call. = FALSE)
     }
-    ua   <- httr::user_agent("https://github.com/derekholmes0")
+    ua   <- httr::user_agent("http://httpbin.org/user-agent")
 
     # parameterss
-    dots <- list(...)
-    dots$symbol      <- symbol
-    dots$apikey      <- av_api_key()[1]
+    dots          <- list(...)
+    dots$symbol   <- symbol
+    dots$apikey   <- av_api_key()[1]
 
+    # New: DIstinction betweebn FX and Crypto
     # Forex
-    is_forex <- !is.null(symbol) && stringr::str_detect(symbol[1], "\\/")
+    is_forex <- !is.null(symbol) && stringr::str_detect(symbol[1], "\\/") &&
+      nrow(av_funcmap[category=="fx" & av_fn==av_fun,])>0
     if (is_forex) {
         currencies  <- symbol |> stringr::str_split_fixed("\\/", 2) |> as.vector()
         dots[c("from_currency","to_currency","from_symbol","to_symbol")] <- currencies[c(1,2,1,2)]
         dots$symbol <- NULL
+    }
+
+    # Forex
+    is_crypto <- !is.null(symbol) && stringr::str_detect(symbol[1], "\\/") &&
+                nrow(av_funcmap[category=="crypto" & av_fn==av_fun,])>0
+    if (is_crypto) {
+      currencies  <- symbol |> stringr::str_split_fixed("\\/", 2) |> as.vector()
+      dots[c("symbol","market","from_symbol","to_symbol")] <- currencies[c(1,2,1,2)]
     }
 
     # Generate URL
@@ -158,13 +164,13 @@ av_get_pf <- function(symbol, av_fun, symbolvarnm="symbol",dfonerror=TRUE,melted
         content <- httr::content(response, as = "text", encoding = "UTF-8")
         content_list <- content |> jsonlite::fromJSON()
         if ("Error Message" %in% names(content_list)) {
-            message("av_get_pf:", content_list[[1]])
+            message_if_red(TRUE,"av_get_pf:", content_list[[1]])
             return(data.frame())
         }
         # Detect good/bad call
         if (length(content_list)>0) {
           if(content_list[1] |> names() == "meta_data") {  # Good call with Metadata returned
-                message(" av_get_pf: Reurning raw output; send to appropriate helper ---------------------------- ")
+                message_if_green(the_av$verbose %||% FALSE," av_get_pf: Reurning raw output; send to appropriate helper ---------------------------- ")
                 return(content_list)
             }
             else {  # Mixed results, process as best as possible
@@ -192,27 +198,46 @@ av_get_pf <- function(symbol, av_fun, symbolvarnm="symbol",dfonerror=TRUE,melted
             params <- paste(names(params_list), params_list, sep = "=", collapse = ", ")
             params <- gsub("av_fun","function",params)
             content <- content  |> paste(". API parameters used: ", params)
-            message("av_get_pf Error: ", content)
+            message_if_red(TRUE,"av_get_pf Error: ", content)
             return(data.table::data.table())
         }
     }
     else { #  application/x-download
         # CSV Returned - Good Call - Time Series CSV file
-        contx <- httr::content(response, as = "text", encoding = "UTF-8")
-        content <- gsub("%", "",contx) |> data.table::fread(,na.strings=c(".","NA"))
-        if((melted=="default" &  pset[1,]$outform=="melt") | (as.character(melted) %in% c("always","TRUE"))) {
-          if(!(symbolvarnm %in% colnames(content))) {
-            content <- content[,c(symbolvarnm):=symbol]  # Need to do before melt
-            }
-          content <- content |> melt_tobasetype(idvar=symbolvarnm)
+      contx <- httr::content(response, as = "text", encoding = "UTF-8")
+      content <- gsub("%", "",contx) |> data.table::fread(na.strings=c(".","NA","None"), tz="UTC")
+      datatypes<-data.table(colnm=names(content),allna = lapply(content,\(x) all(is.na(x))),
+                        coltypes=lapply(content,typeof), colclass=lapply(content,\(x) class(x)[[1]]))
+      # COnvert all nas to doubles
+      toconvert<-datatypes[coltypes=="logical" & allna==TRUE,]$colnm
+      content[,(toconvert):=lapply(.SD,as.numeric),.SDcols=toconvert]
+      # Adjust timestamps to correct timezone
+      toconvert <- datatypes[colclass=="POSIXct",]$colnm
+      content[,(toconvert):=lapply(.SD,\(x) as.POSIXct(x-the_av$NY_local_hrs,tz=Sys.timezone())),.SDcols=toconvert]
+      if((melted=="default" &  pset[1,]$outform=="melt") | (as.character(melted) %in% c("always","TRUE"))) {
+        if(!(symbolvarnm %in% colnames(content))) {
+          content[,c(symbolvarnm):=symbol]  # Need to do before melt
+          }
+        content <- content |> melt_tobasetype(idvar=symbolvarnm)
         }
     }
     if( !pset[1,]$hassymbol ) {
-        content$symbol = av_fun
+      content$symbol = av_fun
     }
     # Return desc
     if ("timestamp" %in% names(content)) {
         data.table::setorder(content,timestamp)
+    }
+    # Delay if needed.
+    if(delay>0) {
+      Sys.sleep(delay)
+    }
+    # Deal with permissionings messages
+    if("variable" %in% names(content)) {
+      if(nrow(msgset <- content[variable=="message",]) >0 ) {
+        message_if(TRUE,msgset[1,"value_str"])
+        return(content[])
+      }
     }
     if(nchar(symbolvarnm)>0) {
       if(!(symbolvarnm %in% colnames(content))) {
@@ -262,7 +287,7 @@ av_form_param_url<- function(this_av_fn,dots,t_entitlement=NA_character_) {
     pset <- pset[nchar(value)>0,]
     missing_required = pset[get("ro")=="R" & is.na(value),] # get marginally faster
     if(nrow(missing_required)>0) {
-        message("av_form_param_url: ERROR ",this_av_fn," missing required parameters: ", paste0(missing_required$paramname,collapse=", "))
+        message_if_red(TRUE,"av_form_param_url: ERROR ",this_av_fn," missing required parameters: ", paste0(missing_required$paramname,collapse=", "))
         return(NULL)
     }
     url_list <- pset[!is.na(get("value")),]

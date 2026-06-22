@@ -5,12 +5,16 @@
 #' `av_extract_df()` pulls out nested data.frames from mixed data returned by  [av_get_pf()]
 #' `av_extract_fx()` returns a simplified FX quote in data.table formfrom [av_get_pf()] calls.
 #' `av_extract_analytics()` returns melted data.table from calls to `av_get_pf("ANALYTICS_FIXED_WINDOW")` or `av_get_pf("ANALYTICS_SLIDING_WINDOW")`
+#' `av_extract_divs_or_splits()` returns melted data.table from calls to `av_get_pf("DIVIDENDS")` or `av_get_pf("SPLITS")`
 #'
 #' @param indta A data.table as returned by av_get()
 #' @param grepstring select which variable (data item) to unnest in data.table returned from av_get_pf
 #' @param melt Return data in melted/normalized form
 #' @param separate_vars (default : FALSE)  separate out multiple levels of variable names into new keys
-#'
+#' @param outputform (default : `common`, `av_extract_fx()` only):  Use common names from `REALTIME_BULK_QUOTES`
+#' @param empty_dt_onerror (default : FALSE): Return gracefully an empty data.table if requested item is not present.
+#' @param cols (default : all columns:  `av_extract_fx()` only):  String or List of columns to return
+#'`
 #' @returns Extracted data.tables for nested data returned from [av_get_pf()], If `grepstring` is not specified, first nested table is returned. [av_extract_fx()] returns a shortened data.table with FX quotes.
 #'
 #' @details [av_get_pf()] frequently returns a nested data.table, or a structure with nested data.frames.  These are utilities functions to extract, filter and summarize returned values.
@@ -27,8 +31,13 @@
 #'
 #' @rdname av_extract_df
 #' @export
-av_extract_df <- function(indta,grepstring="",melt=FALSE) {  # Keep symbol, variable
-    indta <- indta[which(indta$ltype=="list"),][grepl(grepstring,get("variable")),]
+av_extract_df <- function(indta,grepstring="",melt=FALSE,empty_dt_onerror=FALSE) {  # Keep symbol, variable
+    ltype=value_df=keep=NULL
+    indta <- indta[ltype=="list",][grepl(grepstring,get("variable")),]
+    indta <- indta[,keep:=is.data.frame(value_df[[1]]),by=.I][keep==TRUE,] # Take out empty value_dfs
+    if(empty_dt_onerror==TRUE && nrow(indta)<=0) {
+      return(data.table())
+    }
     outdlist <- lapply(seq(1,nrow(indta)),
         \(i) {
             dtax <- data.table::data.table(indta[i,]$value_df[[1]])
@@ -47,11 +56,17 @@ av_extract_df <- function(indta,grepstring="",melt=FALSE) {  # Keep symbol, vari
 
 #' @rdname av_extract_df
 #' @export
-av_extract_fx <- function(indta) {
+av_extract_fx <- function(indta,outputform="common",cols="") {
     thissymbol <- indta[1,]$symbol
     fxquote <- data.table::dcast(indta[get("ltype")=="numeric"],symbol ~ variable,value.var="value_str")
     fxquote <- fxquote[,.(`symbol`=thissymbol,`Ask`=as.numeric(get("Ask Price")),`Bid`=as.numeric(get("Bid Price")),`QuoteTimestamp`=as.POSIXct(get("Last Refreshed")))]
     fxquote <- fxquote[,':='(`Mid`=(get("Ask")+ get("Bid"))/2)]
+    if(outputform=="common") {
+      setnames(fxquote,c("QuoteTimestamp","Mid"),c("timestamp","close"))
+    }
+    if(length(s(cols))>0) {
+      fxquote <- fxquote[,.SD,.SDcols=s(cols)]
+    }
     return(fxquote[])
 }
 
@@ -67,4 +82,15 @@ av_extract_analytics <- function(indta,separate_vars=FALSE) {
   }
   return(dt_2)
 }
+
+#' @rdname av_extract_df
+#' @export
+av_extract_divs_or_splits <- function(indta) {
+  i=value_num=NULL
+  indta<- indta[,let(i=.I-min(.I),value_date=as.Date(value_num)),by=.(variable)]
+  dt_1 <- dcast(indta[grepl("date$",variable),], i ~ variable, value.var="value_date")[,i:=NULL]
+  dt_2 <- dcast(indta[!grepl("date$",variable),], i ~ variable, value.var="value_num")[,i:=NULL]
+  return(cbindlist(list(dt_1,dt_2)))
+}
+
 
