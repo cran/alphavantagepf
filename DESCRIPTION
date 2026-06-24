@@ -1,7 +1,7 @@
 Package: alphavantagepf
 Title: Comprehensive R Wrapper and Shiny Interface for 'Alphavantage
         Financial Data' API
-Version: 0.8.0
+Version: 0.8.1
 Authors@R: c(
     person("Derek", "Holmes", email = "derek@derekholmes.com", role = c("aut", "cre", "cph"))
     )
@@ -24,8 +24,8 @@ URL: https://github.com/derekholmes0/alphavantagepf,
         https://derekholmes0.github.io/alphavantagepf/
 BugReports: https://github.com/derekholmes0/alphavantagepf/issues
 NeedsCompilation: no
-Packaged: 2026-06-21 15:01:30 UTC; DFH
+Packaged: 2026-06-23 12:43:21 UTC; DFH
 Author: Derek Holmes [aut, cre, cph]
 Maintainer: Derek Holmes <derek@derekholmes.com>
 Repository: CRAN
-Date/Publication: 2026-06-22 06:50:40 UTC
+Date/Publication: 2026-06-24 12:10:02 UTC

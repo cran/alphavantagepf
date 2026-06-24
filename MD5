@@ -1,6 +1,6 @@
-51c317802d2810f8fd38a124cfaa35cd *DESCRIPTION
+0fbe8ee0d6028eac3aa1cee8db3edca1 *DESCRIPTION
 da677cbd3853431a0879f4145e0fed9e *NAMESPACE
-8982843d0d2c33fee5f139bc01a0e628 *NEWS.md
+7831104f7ad0ba028c36154ba33ab61e *NEWS.md
 f8d5f27a2716c79d9bceb374b2f1d51b *R/Constants.R
 d8a4f16b09e98a062fbde4efe19b82bb *R/alphavantagepf-package.R
 be4b1bc3db9fa3be572b9a0529ef5e9b *R/app.R
@@ -14,7 +14,7 @@ f3f1c7c1e3f90ec4c254886b98588b40 *R/av_extract.R
 6cf176847e271755da3569d2abaee825 *R/av_get_pf.R
 e656243b10526976ea18b141cc799276 *R/av_runapp.R
 4892b4083c6369cd3e2a6e34ccec12c0 *R/global_vars.R
-ba3c8249386a2146a89834f49ae235a1 *R/preamble.R
+bbe149383a2a28283d30e540d2e9d849 *R/preamble.R
 8ce715378e87e49b1383887a34d21e11 *R/sysdata.rda
 346645eb7c9d60e025f0938ede6b90e6 *R/utilities.R
 d087ab8dacee24da3ca4cb9017aef0d3 *README.md
